@@ -61,7 +61,7 @@ jobs:
 
       - id: fetch-token
         name: "Enterprise: token auth in namespace"
-        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets@main
         with:
           url: ${{ secrets.VAULT_ENTERPRISE_URL }}
           method: token
@@ -72,7 +72,7 @@ jobs:
 
       - id: fetch-approle
         name: "Enterprise: AppRole auth in namespace"
-        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets@main
         with:
           url: ${{ secrets.VAULT_ENTERPRISE_URL }}
           method: approle
