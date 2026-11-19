@@ -41,11 +41,19 @@ jobs:
           done
           echo "--- /v1/sys/health ---"
           curl -sS "$VAULT_ADDR/v1/sys/health" || { echo "cannot reach Vault"; exit 1; }; echo
-          TOKEN=$(curl -sS --fail-with-body --request POST \
+          RESP=$(curl -sS -w '\n%{http_code}' --request POST \
             --header "X-Vault-Namespace: $NAMESPACE" \
             --data "{\"role_id\":\"$ROLE_ID\",\"secret_id\":\"$SECRET_ID\"}" \
-            "$VAULT_ADDR/v1/auth/approle/login" \
-            | grep -o '"client_token":"[^"]*"' | cut -d'"' -f4)
+            "$VAULT_ADDR/v1/auth/approle/login") || { echo "AppRole login request failed (network?)"; exit 1; }
+          CODE=$(printf '%s\n' "$RESP" | tail -n1)
+          BODY=$(printf '%s\n' "$RESP" | sed '$d')
+          if [ "$CODE" != "200" ]; then
+            # Vault's error body holds only the reason (e.g. "invalid role or secret ID"), no credentials.
+            echo "AppRole login failed: HTTP $CODE: $BODY"
+            echo "role id length: ${#ROLE_ID}, secret id length: ${#SECRET_ID}, namespace length: ${#NAMESPACE}"
+            exit 1
+          fi
+          TOKEN=$(printf '%s' "$BODY" | grep -o '"client_token":"[^"]*"' | cut -d'"' -f4)
           [ -n "$TOKEN" ] || { echo "AppRole login returned no client_token"; exit 1; }
           printf '%s' "$TOKEN" > "$CLOUDBEES_OUTPUTS/login_token"
           echo "OK: AppRole login succeeded"
