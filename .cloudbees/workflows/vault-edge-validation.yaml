@@ -21,7 +21,7 @@ jobs:
     steps:
       - id: fetch
         name: Fetch KV v1 secret
-        uses: docker://hashicorp-vault-actions:local
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets:@v1
         shell: sh
         env:
           VAULT_URL: http://172.17.0.1:8200
