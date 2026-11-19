@@ -1,104 +1,45 @@
 apiVersion: automation.cloudbees.io/v1alpha1
 kind: workflow
-name: vault-edge-validation
+name: local-vault-test
 
-# THROWAWAY (CBP-72654): validates the Vault fetch-secrets action on a local edge runner
-# (label edge-vkumar). Not to be merged. The community job is
-# omitted because edge runners reject `services:`.
-#
-# Secret properties: VAULT_ENTERPRISE_URL, VAULT_ENTERPRISE_NAMESPACE,
-# VAULT_ENTERPRISE_ROLE_ID, VAULT_ENTERPRISE_SECRET_ID (multi-use).
+# Local-only smoke test: runs on a self-hosted edge runner (docker mode,
+# Colima) against a Vault dev container on the same Docker daemon.
+#   Vault:  docker run -d --name vault-local -p 8200:8200 vault:1.7.3 \
+#             server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200
+#   Seed:   KV v1 mount "kv1", secret kv1/app/demo {username, password}
+#   Image:  hashicorp-vault-actions:local, built from this repo on busybox
+#           (non-latest tag, so the runner uses the local image, no pull)
+# 172.17.0.1 is the docker0 bridge IP inside the Colima VM, where the
+# published port 8200 listens.
 
 on:
   workflow_dispatch:
 
-permissions:
-  scm-token-own: read
-  scm-token-org: read
-
 jobs:
-  # Runs against a pre-provisioned Vault Enterprise instance using only AppRole
-  # credentials (no admin token, no seeding): the secret to read must already
-  # exist and be readable by that role. Token auth is covered by logging in with
-  # the AppRole to get a client token and passing it to the action (the action
-  # revokes that token afterwards). If the secret-id is single-use, the second
-  # login (the AppRole step) will fail - use a multi-use secret-id.
-  enterprise:
+  fetch-kv1:
     runs-on: [self-hosted, nagesh]
     steps:
-      - id: login
-        name: Log in with AppRole to obtain a client token for the token-auth case
-        uses: docker://golang:1.26.3
+      - id: fetch
+        name: Fetch KV v1 secret
+        uses: docker://hashicorp-vault-actions:local
+        shell: sh
         env:
-          VAULT_ADDR: ${{ secrets.VAULT_ENTERPRISE_URL }}
-          NAMESPACE: ${{ secrets.VAULT_ENTERPRISE_NAMESPACE }}
-          ROLE_ID: ${{ secrets.VAULT_ENTERPRISE_ROLE_ID }}
-          SECRET_ID: ${{ secrets.VAULT_ENTERPRISE_SECRET_ID }}
+          VAULT_URL: http://172.17.0.1:8200
+          VAULT_METHOD: token
+          VAULT_TOKEN_INPUT: root
+          VAULT_SECRETS: "kv1/app/demo username | demo_user; kv1/app/demo password | demo_password"
         run: |
-          set -euo pipefail
-          for v in VAULT_ADDR NAMESPACE ROLE_ID SECRET_ID; do
-            [ -n "${!v}" ] || { echo "$v is empty - check the VAULT_ENTERPRISE_* secret properties exist and are readable by this repo"; exit 1; }
-          done
-          echo "--- /v1/sys/health ---"
-          curl -sS "$VAULT_ADDR/v1/sys/health" || { echo "cannot reach Vault"; exit 1; }; echo
-          RESP=$(curl -sS -w '\n%{http_code}' --request POST \
-            --header "X-Vault-Namespace: $NAMESPACE" \
-            --data "{\"role_id\":\"$ROLE_ID\",\"secret_id\":\"$SECRET_ID\"}" \
-            "$VAULT_ADDR/v1/auth/approle/login") || { echo "AppRole login request failed (network?)"; exit 1; }
-          CODE=$(printf '%s\n' "$RESP" | tail -n1)
-          BODY=$(printf '%s\n' "$RESP" | sed '$d')
-          if [ "$CODE" != "200" ]; then
-            # Vault's error body holds only the reason (e.g. "invalid role or secret ID"), no credentials.
-            echo "AppRole login failed: HTTP $CODE: $BODY"
-            echo "role id length: ${#ROLE_ID}, secret id length: ${#SECRET_ID}, namespace length: ${#NAMESPACE}"
-            exit 1
-          fi
-          TOKEN=$(printf '%s' "$BODY" | grep -o '"client_token":"[^"]*"' | cut -d'"' -f4)
-          [ -n "$TOKEN" ] || { echo "AppRole login returned no client_token"; exit 1; }
-          printf '%s' "$TOKEN" > "$CLOUDBEES_OUTPUTS/login_token"
-          echo "OK: AppRole login succeeded"
+          set -eu
+          /app/vault
 
-
-      - id: fetch-token
-        name: "Enterprise: token auth in namespace"
-        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
-        with:
-          url: ${{ secrets.VAULT_ENTERPRISE_URL }}
-          method: token
-          token: ${{ steps.login.outputs.login_token }}
-          namespace: ${{ secrets.VAULT_ENTERPRISE_NAMESPACE }}
-          secrets: |
-            secret/data/app/prod/db password | vault_value
-
-      - id: fetch-approle
-        name: "Enterprise: AppRole auth in namespace"
-        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
-        with:
-          url: ${{ secrets.VAULT_ENTERPRISE_URL }}
-          method: approle
-          roleId: ${{ secrets.VAULT_ENTERPRISE_ROLE_ID }}
-          secretId: ${{ secrets.VAULT_ENTERPRISE_SECRET_ID }}
-          namespace: ${{ secrets.VAULT_ENTERPRISE_NAMESPACE }}
-          secrets: |
-            secret/data/app/prod/db password | vault_value
-
-      # Deliberately prints the resolved values: the log must show *** only.
-      - name: "Verify values and prove masking"
-        uses: docker://golang:1.26.3
+      - name: Check output
+        uses: docker://busybox:1.38.0
+        shell: sh
         env:
-          TOKEN_OUTPUT: ${{ steps.fetch-token.outputs.vault_output }}
-          APPROLE_OUTPUT: ${{ steps.fetch-approle.outputs.vault_output }}
+          VAULT_OUTPUT: ${{ steps.fetch.outputs.vault_output_var }}
         run: |
-          set -euo pipefail
-          echo "token output:   $TOKEN_OUTPUT"
-          echo "approle output: $APPROLE_OUTPUT"
-          echo "$TOKEN_OUTPUT" | grep -q '"vault_value":"[^"]\+"'
-          echo "$APPROLE_OUTPUT" | grep -q '"vault_value":"[^"]\+"'
-          # Both auth methods must resolve to the same value.
-          T=$(echo "$TOKEN_OUTPUT" | grep -o '"vault_value":"[^"]*"')
-          A=$(echo "$APPROLE_OUTPUT" | grep -o '"vault_value":"[^"]*"')
-          [ "$T" = "$A" ] || { echo "token and AppRole auth resolved different values"; exit 1; }
-          # The length is not sensitive and shows a real value came back.
-          V=$(echo "$TOKEN_OUTPUT" | grep -o '"vault_value":"[^"]*"' | cut -d'"' -f4)
-          echo "resolved value length: ${#V}"
-          echo "OK: both auth methods resolved the same non-empty value (check the log: it must not appear in clear text)"
+          set -eu
+          echo "vault_output (values masked in logs): $VAULT_OUTPUT"
+          echo "$VAULT_OUTPUT" | grep -q '"demo_user":"demo_user"'
+          echo "$VAULT_OUTPUT" | grep -q '"demo_password":"hello-from-v1"'
+          echo "PASS"
