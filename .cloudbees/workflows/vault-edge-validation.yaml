@@ -21,7 +21,7 @@ jobs:
     steps:
       - id: fetch
         name: Fetch KV v1 secret
-        uses: cloudbees-io/hashicorp-vault-fetch-secrets:@v1
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
         with:
           url: http://172.17.0.1:8200
           method: token
