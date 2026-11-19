@@ -63,8 +63,8 @@ jobs:
         with:
           url: http://host.docker.internal:8200
           method: approle
-          roleId: 00a74cc5-4dd3-826e-b1ba-215f2cde7d66
-          secretId: 742cc22e-6591-b6ea-3df0-d29f22432f6c
+          roleId: 40d31384-9773-0ba1-120f-2765a2ab7490
+          secretId: 06ad7f4c-90cd-6974-32ce-f81bc66295c4
           secrets: |
             kv1/app/demo username | demo_user;
             kv1/app/demo password | demo_password
@@ -77,8 +77,8 @@ jobs:
         with:
           url: http://host.docker.internal:8200
           method: approle
-          roleId: 00a74cc5-4dd3-826e-b1ba-215f2cde7d66
-          secretId: 742cc22e-6591-b6ea-3df0-d29f22432f6c
+          roleId: 40d31384-9773-0ba1-120f-2765a2ab7490
+          secretId: 06ad7f4c-90cd-6974-32ce-f81bc66295c4
           secrets: |
             kv1/app/demo username | demo_user;
             kv1/app/demo password | demo_password
