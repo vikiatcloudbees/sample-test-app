@@ -22,15 +22,13 @@ jobs:
       - id: fetch
         name: Fetch KV v1 secret
         uses: cloudbees-io/hashicorp-vault-fetch-secrets:@v1
-        shell: sh
-        env:
-          VAULT_URL: http://172.17.0.1:8200
-          VAULT_METHOD: token
-          VAULT_TOKEN_INPUT: root
-          VAULT_SECRETS: "kv1/app/demo username | demo_user; kv1/app/demo password | demo_password"
-        run: |
-          set -eu
-          /app/vault
+        with:
+          url: http://172.17.0.1:8200
+          method: token
+          token: root
+          secrets: |
+            kv1/app/demo username | demo_user;
+            kv1/app/demo password | demo_password
 
       - name: Check output
         uses: docker://busybox:1.38.0
