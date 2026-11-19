@@ -41,3 +41,31 @@ jobs:
           echo "$VAULT_OUTPUT" | grep -q '"demo_user":"demo_user"'
           echo "$VAULT_OUTPUT" | grep -q '"demo_password":"hello-from-v1"'
           echo "PASS"
+
+      - id: fetch
+        name: Fetch KV v1 secret
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
+        with:
+          url: http://host.docker.internal:8200
+          method: approle
+          roleId: 00a74cc5-4dd3-826e-b1ba-215f2cde7d66
+          secretId: 742cc22e-6591-b6ea-3df0-d29f22432f6c
+          secrets: |
+            kv1/app/demo username | demo_user;
+            kv1/app/demo password | demo_password
+
+
+
+      - id: fetch2
+        name: Fetch KV v1 secret
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
+        with:
+          url: http://host.docker.internal:8200
+          method: approle
+          roleId: 00a74cc5-4dd3-826e-b1ba-215f2cde7d66
+          secretId: 742cc22e-6591-b6ea-3df0-d29f22432f6c
+          secrets: |
+            kv1/app/demo username | demo_user;
+            kv1/app/demo password | demo_password
+
+
