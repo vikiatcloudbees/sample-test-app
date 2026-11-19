@@ -1,14 +1,14 @@
+
 apiVersion: automation.cloudbees.io/v1alpha1
 kind: workflow
 name: local-vault-test
 
-# Local-only smoke test: runs on a self-hosted edge runner (docker mode,
-# Colima) against a Vault dev container on the same Docker daemon.
+# Local-only smoke test of cloudbees-io/hashicorp-vault-fetch-secrets on a
+# self-hosted edge runner (docker mode) against a Vault dev container on the
+# same Docker daemon.
 #   Vault:  docker run -d --name vault-local -p 8200:8200 vault:1.7.3 \
 #             server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200
 #   Seed:   KV v1 mount "kv1", secret kv1/app/demo {username, password}
-#   Image:  hashicorp-vault-actions:local, built from this repo on busybox
-#           (non-latest tag, so the runner uses the local image, no pull)
 # 172.17.0.1 is the docker0 bridge IP inside the Colima VM, where the
 # published port 8200 listens.
 
@@ -34,7 +34,7 @@ jobs:
         uses: docker://busybox:1.38.0
         shell: sh
         env:
-          VAULT_OUTPUT: ${{ steps.fetch.outputs.vault_output_var }}
+          VAULT_OUTPUT: ${{ steps.fetch.outputs.vault_output }}
         run: |
           set -eu
           echo "vault_output (values masked in logs): $VAULT_OUTPUT"
