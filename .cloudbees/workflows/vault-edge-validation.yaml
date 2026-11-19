@@ -21,7 +21,7 @@ jobs:
     steps:
       - id: fetch0
         name: Fetch KV v1 secret
-        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets@main
         continue-on-error: true
         with:
           url: http://172.17.0.1:8200
@@ -34,7 +34,7 @@ jobs:
 
       - id: fetch
         name: Fetch KV v1 secret
-        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets@main
         continue-on-error: true
         with:
           url: http://172.17.0.1:8200
@@ -59,7 +59,7 @@ jobs:
 
       - id: fetch2
         name: Fetch KV v1 secret
-        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets@main
         with:
           url: http://host.docker.internal:8200
           method: approle
@@ -73,7 +73,7 @@ jobs:
 
       - id: fetch3
         name: Fetch KV v1 secret
-        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets@main
         with:
           url: http://host.docker.internal:8200
           method: approle
