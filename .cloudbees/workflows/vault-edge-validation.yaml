@@ -42,7 +42,7 @@ jobs:
           echo "$VAULT_OUTPUT" | grep -q '"demo_password":"hello-from-v1"'
           echo "PASS"
 
-      - id: fetch
+      - id: fetch2
         name: Fetch KV v1 secret
         uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
         with:
