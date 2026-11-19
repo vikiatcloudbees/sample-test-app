@@ -56,7 +56,7 @@ jobs:
 
 
 
-      - id: fetch2
+      - id: fetch3
         name: Fetch KV v1 secret
         uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
         with:
