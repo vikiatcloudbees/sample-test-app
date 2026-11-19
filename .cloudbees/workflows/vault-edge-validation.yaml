@@ -19,9 +19,10 @@ jobs:
   fetch-kv1:
     runs-on: [self-hosted, nagesh]
     steps:
-      - id: fetch
+      - id: fetch0
         name: Fetch KV v1 secret
         uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
+        continue-on-error: true
         with:
           url: http://172.17.0.1:8200
           method: token
@@ -29,6 +30,20 @@ jobs:
           secrets: |
             kv1/app/demo username | demo_user;
             kv1/app/demo password | demo_password
+
+
+      - id: fetch
+        name: Fetch KV v1 secret
+        uses: cloudbees-io/hashicorp-vault-fetch-secrets@v1
+        continue-on-error: true
+        with:
+          url: http://172.17.0.1:8200
+          method: token
+          token: root
+          secrets: |
+            kv1/app/demo username | demo_user;
+            kv1/app/demo password | demo_password
+
 
       - name: Check output
         uses: docker://busybox:1.38.0
