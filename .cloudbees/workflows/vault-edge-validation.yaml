@@ -43,7 +43,7 @@ jobs:
 
 
       - name: Use fetched secrets
-        uses: docker://alpine:latest
+        uses: docker://golang:1.26.3
         shell: sh
         run: |
           echo "approle output: $APPROLE_OUTPUT"
