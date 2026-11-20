@@ -47,7 +47,7 @@ jobs:
         shell: sh
         run: |
           echo "approle output: $APPROLE_OUTPUT"
-          echo "DB password is fetched but masked: ${{ fromJSON(steps.fetch-my-secrets.outputs.vault_output).password }}"
+          # echo "DB password is fetched but masked: ${{ fromJSON(steps.fetch-my-secrets.outputs.vault_output).password }}"
 
 
 
