@@ -43,7 +43,7 @@ jobs:
 
 
       - name: Use fetched secrets
-        uses: docker://golang:1.26.
+        uses: docker://golang:1.26.3
         env:
           APPROLE_OUTPUT: ${{ steps.fetch-my-secrets.outputs.vault_output }}
         shell: sh
