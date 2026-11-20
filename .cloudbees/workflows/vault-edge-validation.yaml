@@ -43,11 +43,12 @@ jobs:
 
 
       - name: Use fetched secrets
-        uses: docker://golang:1.26.3
+        uses: docker://golang:1.26.
+        env:
+          APPROLE_OUTPUT: ${{ steps.fetch-approle.outputs.vault_output }}
         shell: sh
         run: |
           echo "approle output: $APPROLE_OUTPUT"
-          # echo "DB password is fetched but masked: ${{ fromJSON(steps.fetch-my-secrets.outputs.vault_output).password }}"
 
 
 
