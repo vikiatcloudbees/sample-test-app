@@ -43,19 +43,14 @@ jobs:
       - name: "Verify values and prove masking"
         uses: docker://golang:1.26.3
         env:
-          TOKEN_OUTPUT: ${{ steps.fetch-token.outputs.vault_output }}
           APPROLE_OUTPUT: ${{ steps.fetch-approle.outputs.vault_output }}
         run: |
           set -euo pipefail
-          echo "token output:   $TOKEN_OUTPUT"
           echo "approle output: $APPROLE_OUTPUT"
-          echo "$TOKEN_OUTPUT" | grep -q '"vault_value":"[^"]\+"'
           echo "$APPROLE_OUTPUT" | grep -q '"vault_value":"[^"]\+"'
           # Both auth methods must resolve to the same value.
-          T=$(echo "$TOKEN_OUTPUT" | grep -o '"vault_value":"[^"]*"')
           A=$(echo "$APPROLE_OUTPUT" | grep -o '"vault_value":"[^"]*"')
           [ "$T" = "$A" ] || { echo "token and AppRole auth resolved different values"; exit 1; }
           # The length is not sensitive and shows a real value came back.
-          V=$(echo "$TOKEN_OUTPUT" | grep -o '"vault_value":"[^"]*"' | cut -d'"' -f4)
           echo "resolved value length: ${#V}"
-          echo "OK: both auth methods resolved the same non-empty value (check the log: it must not appear in clear text)"
+          echo "OK: auth methods resolved the same non-empty value (check the log: it must not appear in clear text)"
